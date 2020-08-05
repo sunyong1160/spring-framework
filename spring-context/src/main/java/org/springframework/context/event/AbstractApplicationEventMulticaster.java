@@ -102,6 +102,12 @@ public abstract class AbstractApplicationEventMulticaster
 	}
 
 
+	/**
+	 * 上述方法定义在SimpleApplicationEventMulticaster父类AbstractApplicationEventMulticaster中。
+	 * 关键代码为this.defaultRetriever.applicationListeners.add(listener);
+	 * 这是一个内部类，用来保存所有的监听器。也就是在这一步，将spring.factories中的监听器传递到SimpleApplicationEventMulticaster中
+	 * @param listener
+	 */
 	@Override
 	public void addApplicationListener(ApplicationListener<?> listener) {
 		synchronized (this.retrievalMutex) {
@@ -111,6 +117,7 @@ public abstract class AbstractApplicationEventMulticaster
 			if (singletonTarget instanceof ApplicationListener) {
 				this.defaultRetriever.applicationListeners.remove(singletonTarget);
 			}
+			//内部对象类
 			this.defaultRetriever.applicationListeners.add(listener);
 			this.retrieverCache.clear();
 		}

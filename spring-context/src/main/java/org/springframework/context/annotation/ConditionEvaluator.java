@@ -144,14 +144,15 @@ class ConditionEvaluator {
 		@Nullable
 		private final ClassLoader classLoader;
 
+		//创建一个条件计算器对象
 		public ConditionContextImpl(@Nullable BeanDefinitionRegistry registry,
 				@Nullable Environment environment, @Nullable ResourceLoader resourceLoader) {
 
-			this.registry = registry;
-			this.beanFactory = deduceBeanFactory(registry);
-			this.environment = (environment != null ? environment : deduceEnvironment(registry));
-			this.resourceLoader = (resourceLoader != null ? resourceLoader : deduceResourceLoader(registry));
-			this.classLoader = deduceClassLoader(resourceLoader, this.beanFactory);
+			this.registry = registry;//初始条件计算器的bean定义注册器
+			this.beanFactory = deduceBeanFactory(registry);//初始化bean工厂
+			this.environment = (environment != null ? environment : deduceEnvironment(registry));//为环境对象赋值
+			this.resourceLoader = (resourceLoader != null ? resourceLoader : deduceResourceLoader(registry));//为资源加载器赋值
+			this.classLoader = deduceClassLoader(resourceLoader, this.beanFactory);//为容器中注册系统的bean定义信息
 		}
 
 		@Nullable

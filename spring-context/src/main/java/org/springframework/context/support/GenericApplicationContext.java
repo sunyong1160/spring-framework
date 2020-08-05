@@ -108,7 +108,9 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * @see #registerBeanDefinition
 	 * @see #refresh
 	 */
+	//调用父类的构造方法 生成一个IOC容器
 	public GenericApplicationContext() {
+		//创建IOC容器
 		this.beanFactory = new DefaultListableBeanFactory();
 	}
 

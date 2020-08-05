@@ -108,10 +108,13 @@ class BeanDefinitionValueResolver {
 	public Object resolveValueIfNecessary(Object argName, @Nullable Object value) {
 		// We must check each value to see whether it requires a runtime reference
 		// to another bean to be resolved.
+		//判断解析的值是不是 运行时bean的引用
 		if (value instanceof RuntimeBeanReference) {
 			RuntimeBeanReference ref = (RuntimeBeanReference) value;
+			//解析引用
 			return resolveReference(argName, ref);
 		}
+		//若value 是RuntimeBeanNameReference
 		else if (value instanceof RuntimeBeanNameReference) {
 			String refName = ((RuntimeBeanNameReference) value).getBeanName();
 			refName = String.valueOf(doEvaluate(refName));
@@ -121,11 +124,13 @@ class BeanDefinitionValueResolver {
 			}
 			return refName;
 		}
+		//是BeanDefinitionHolder
 		else if (value instanceof BeanDefinitionHolder) {
 			// Resolve BeanDefinitionHolder: contains BeanDefinition with name and aliases.
 			BeanDefinitionHolder bdHolder = (BeanDefinitionHolder) value;
 			return resolveInnerBean(argName, bdHolder.getBeanName(), bdHolder.getBeanDefinition());
 		}
+		//BeanDefinition
 		else if (value instanceof BeanDefinition) {
 			// Resolve plain BeanDefinition, without contained name: use dummy name.
 			BeanDefinition bd = (BeanDefinition) value;
@@ -133,6 +138,7 @@ class BeanDefinitionValueResolver {
 					ObjectUtils.getIdentityHexString(bd);
 			return resolveInnerBean(argName, innerBeanName, bd);
 		}
+		//处理array的
 		else if (value instanceof DependencyDescriptor) {
 			Set<String> autowiredBeanNames = new LinkedHashSet<>(4);
 			Object result = this.beanFactory.resolveDependency(
@@ -303,6 +309,7 @@ class BeanDefinitionValueResolver {
 		try {
 			Object bean;
 			Class<?> beanType = ref.getBeanType();
+			//判断父容器是否能够解析
 			if (ref.isToParent()) {
 				BeanFactory parent = this.beanFactory.getParentBeanFactory();
 				if (parent == null) {
@@ -326,9 +333,12 @@ class BeanDefinitionValueResolver {
 					resolvedName = namedBean.getBeanName();
 				}
 				else {
+					//获取bean的引用的名称 调用值解析器来解析bean的名称
 					resolvedName = String.valueOf(doEvaluate(ref.getBeanName()));
+					//解析出来的refName 去容器中获取bean(getBean->doGetBean。。。。。。。。。。。)
 					bean = this.beanFactory.getBean(resolvedName);
 				}
+				//保存到缓存中
 				this.beanFactory.registerDependentBean(resolvedName, this.beanName);
 			}
 			if (bean instanceof NullBean) {

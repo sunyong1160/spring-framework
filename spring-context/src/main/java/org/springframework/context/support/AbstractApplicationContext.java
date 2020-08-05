@@ -516,40 +516,85 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
+			/**
+			 * 刷新上下文环境
+			 * 初始化上下文环境，对系统的环境变量或者系统属性进行准备和校验
+			 * 如环境变量中必须设置某个值才能运行，否则不能运行，这个时候可以在这里加这个校验，
+			 * 重写initPropertySources方法就好了
+			 */
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
+			/**
+			 * 初始化BeanFactory，解析XML，相当于之前的XmlBeanFactory的操作，
+			 */
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			/**
+			 * 为上下文准备BeanFactory，即对BeanFactory的各种功能进行填充，如常用的注解@Autowired @Qualifier等
+			 * 设置SPEL表达式#{key}的解析器
+			 * 设置资源编辑注册器，如PerpertyEditorSupper的支持
+			 * 添加ApplicationContextAwareProcessor处理器
+			 * 在依赖注入忽略实现*Aware的接口，如EnvironmentAware、ApplicationEventPublisherAware等
+			 * 注册依赖，如一个bean的属性中含有ApplicationEventPublisher(beanFactory)，则会将beanFactory的实例注入进去
+			 */
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
+				/**
+				 * 提供子类覆盖的额外处理，即子类处理自定义的BeanFactoryPostProcess
+				 * 执行时间:所有的Bean定义信息已经加载到容器中，但是Bean实例还没有被初始化.
+				 */
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				/**
+				 * 激活各种BeanFactory处理器,包括BeanDefinitionRegistryBeanFactoryPostProcessor和普通的BeanFactoryPostProcessor
+				 * 执行对应的postProcessBeanDefinitionRegistry方法 和  postProcessBeanFactory方法
+				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				/**
+				 * 注册拦截Bean创建的Bean处理器，即注册BeanPostProcessor，不是BeanFactoryPostProcessor，注意两者的区别
+				 * 注意，这里仅仅是注册，并不会执行对应的方法，将在bean的实例化时执行对应的方法
+				 */
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
+				/**
+				 * 初始化上下文中的资源文件，如国际化文件的处理等
+				 */
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				/**
+				 * 初始化上下文事件广播器，并放入applicationEventMulticaster,如ApplicationEventPublisher
+				 */
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
+				/**
+				 * 给子类扩展初始化其他Bean
+				 * springboot入口
+				 */
 				onRefresh();
 
 				// Check for listener beans and register them.
+				/**
+				 * 在所有bean中查找listener bean，然后注册到广播器中
+				 * 把事件监听器注册到多播器上去
+				 */
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// IOC
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
+				// springcloud 入口
 				finishRefresh();
 			}
 
@@ -597,14 +642,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Initialize any placeholder property sources in the context environment.
+		// 可以设置环境的启动默认值
 		initPropertySources();
 
 		// Validate that all properties marked as required are resolvable:
 		// see ConfigurablePropertyResolver#setRequiredProperties
+		// 校验参数
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
 		if (this.earlyApplicationListeners == null) {
+			// 保存早期的监听器
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		}
 		else {
@@ -762,15 +810,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initApplicationEventMulticaster() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		//判断IOC容器中包含applicationEventMulticaster 事件多播器的Bean的name
 		if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
+			//创建一个applicationEventMulticaster的bean放在IOC 容器中,bean的name 为applicationEventMulticaster
 			this.applicationEventMulticaster =
 					beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Using ApplicationEventMulticaster [" + this.applicationEventMulticaster + "]");
 			}
 		}
+		//容器中不包含一个beanName 为applicationEventMulticaster的多播器组件
 		else {
+			//创建一个SimpleApplicationEventMulticaster 多播器
 			this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
+			//注册到容器中
 			beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + APPLICATION_EVENT_MULTICASTER_BEAN_NAME + "' bean, using " +
@@ -822,18 +875,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		//去容器中把applicationListener 捞取出来注册到多播器上去（系统的）
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		//我们自己实现了ApplicationListener 的组件
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
 		}
 
 		// Publish early application events now that we finally have a multicaster...
+		//在这里之前，我们早期想发布的事件 由于没有多播器没有发布，在这里我们总算有了自己的多播器，可以在这里发布早期堆积的事件了.
 		Set<ApplicationEvent> earlyEventsToProcess = this.earlyApplicationEvents;
 		this.earlyApplicationEvents = null;
 		if (earlyEventsToProcess != null) {
@@ -875,6 +931,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
+		// 实例化所有剩余的(非延迟-init)单例。s
 		beanFactory.preInstantiateSingletons();
 	}
 
@@ -891,6 +948,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.
+		// onRefresh()  ===> springCloud
 		getLifecycleProcessor().onRefresh();
 
 		// Publish the final event.

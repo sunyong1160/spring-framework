@@ -128,6 +128,7 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	 * (there <i>should</i> only be one anyway...).
 	 */
 	@SuppressWarnings("unchecked")
+	//找到切面类中方法上的切面注解
 	@Nullable
 	protected static AspectJAnnotation<?> findAspectJAnnotationOnMethod(Method method) {
 		for (Class<?> clazz : ASPECTJ_ANNOTATION_CLASSES) {
